@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>打字測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #sentence {
+            font-size: 18px;
+            margin: 20px 0;
+            line-height: 1.5;
+            min-height: 60px;
+        }
+        #input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin: 20px 0;
+            border: 2px solid #ccc;
+        }
+        .keyboard-row {
+            margin: 5px 0;
+            text-align: center;
+        }
+        .key {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            margin: 2px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            line-height: 50px;
+            font-size: 14px;
+        }
+        .space {
+            width: 300px;
+        }
+        .indent {
+            display: inline-block;
+            width: 30px;
+        }
+        .highlight {
+            background-color: lightblue !important;
+        }
+        .repeat {
+            background-color: orange !important;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result {
+            font-size: 18px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="sentence">按 '開始' 來獲取測試文字</div>
+    <div id="input" contenteditable="true"></div>
+    <div style="text-align: center;">
+        <button onclick="startTest()">開始</button>
+        <button onclick="endTest()">提交</button>
+    </div>
+    <div id="result"></div>
+    <div id="keyboard"></div>
+    <div id="finger-hint"></div>
+
+    <script>
+        let testSentence = '';
+        let startTime;
+        let currentIndex = 0;
+        let prevKey = null;
+        const keyElements = {};
+        const fingerMapping = {
+            "q": "左手小指", "a": "左手小指", "z": "左手小指",
+            "w": "左手無名指", "s": "左手無名指", "x": "左手無名指",
+            "e": "左手中指", "d": "左手中指", "c": "左手中指",
+            "r": "左手食指內", "f": "左手食指內", "v": "左手食指內", 
+            "t": "左手食指外", "g": "左手食指外", "b": "左手食指外",
+            "y": "右手食指外", "h": "右手食指外", "n": "右手食指外", 
+            "u": "右手食指內", "j": "右手食指內", "m": "右手食指內",
+            "i": "右手中指", "k": "右手中指", ",": "右手中指",
+            "o": "右手無名指", "l": "右手無名指", ".": "右手無名指",
+            "p": "右手小指", ";": "右手小指", "/": "右手小指",
+            " ": "拇指"
+        };
+
+        // 初始化鍵盤佈局
+        function createKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            const layout = [
+                {keys: '1234567890-=', indent: 0},
+                {keys: 'qwertyuiop[]', indent: 18},
+                {keys: "asdfghjkl;'", indent: 18},
+                {keys: 'zxcvbnm,./', indent: 18},
+            ];
+
+            layout.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'keyboard-row';
+                rowDiv.style.paddingLeft = row.indent + 'px';
+                
+                row.keys.split('').forEach(key => {
+                    const keyDiv = document.createElement('div');
+                    keyDiv.className = 'key';
+                    keyDiv.textContent = key.toUpperCase();
+                    keyDiv.dataset.key = key;
+                    keyDiv.onclick = () => handleKeyPress(key);
+                    keyElements[key] = keyDiv;
+                    rowDiv.appendChild(keyDiv);
+                });
+                keyboard.appendChild(rowDiv);
+            });
+
+            // 添加空白鍵
+            const spaceRow = document.createElement('div');
+            spaceRow.className = 'keyboard-row';
+            const spaceDiv = document.createElement('div');
+            spaceDiv.className = 'key space';
+            spaceDiv.textContent = 'Space';
+            spaceDiv.dataset.key = ' ';
+            spaceDiv.onclick = () => handleKeyPress(' ');
+            keyElements[' '] = spaceDiv;
+            spaceRow.appendChild(spaceDiv);
+            keyboard.appendChild(spaceRow);
+        }
+
+        // 處理按鍵輸入
+        function handleKeyPress(key) {
+            if (currentIndex >= testSentence.length) return;
+
+            const expectedKey = testSentence[currentIndex].toLowerCase();
+            if (key === expectedKey) {
+                document.getElementById('input').textContent += key;
+                
+                // 更新鍵盤顏色
+                resetKeyboardColor();
+                currentIndex++;
+                prevKey = key;
+                highlightNextKey();
+                
+                // 自動提交
+                if (currentIndex === testSentence.length) {
+                    endTest();
+                }
+            }
+        }
+
+        // 高亮下一個按鍵
+        function highlightNextKey() {
+            if (currentIndex < testSentence.length) {
+                const nextKey = testSentence[currentIndex].toLowerCase();
+                const keyElement = keyElements[nextKey];
+                if (keyElement) {
+                    keyElement.style.backgroundColor = 
+                        (nextKey === prevKey) ? 'orange' : 'lightblue';
+                    document.getElementById('finger-hint').textContent = 
+                        fingerMapping[nextKey] || '';
+                }
+            }
+        }
+
+        // 重置鍵盤顏色
+        function resetKeyboardColor() {
+            Object.values(keyElements).forEach(element => {
+                element.style.backgroundColor = 'white';
+            });
+        }
+
+        // 開始測試
+        async function startTest() {
+            try {
+                const response = await fetch('https://baconipsum.com/api/?type=all-meat&sentences=1&format=text');
+                testSentence = (await response.text()).toLowerCase();
+                document.getElementById('sentence').textContent = testSentence;
+                document.getElementById('input').textContent = '';
+                document.getElementById('result').textContent = '';
+                startTime = Date.now();
+                currentIndex = 0;
+                prevKey = null;
+                resetKeyboardColor();
+                highlightNextKey();
+            } catch (error) {
+                document.getElementById('sentence').textContent = 'error: 無法獲取測試文字';
+            }
+        }
+
+        // 結束測試
+        function endTest() {
+            const endTime = Date.now();
+            const timeTaken = (endTime - startTime) / 1000;
+            const words = testSentence.split(' ').length;
+            const wpm = Math.round((words / timeTaken) * 60 * 100) / 100;
+            document.getElementById('result').textContent = `⏱ WPM: ${wpm}`;
+            resetKeyboardColor();
+            document.getElementById('finger-hint').textContent = '';
+        }
+
+        // 初始化鍵盤和事件監聽
+        createKeyboard();
+        document.addEventListener('keydown', (e) => {
+            if (e.key.length === 1) {
+                handleKeyPress(e.key.toLowerCase());
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
