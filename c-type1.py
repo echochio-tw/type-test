@@ -161,7 +161,7 @@ keyboard_layout = [
     ("1234567890-", 0),
     ("qwertyuiop[]", 28),
     ("asdfghjkl;'", 26),
-    ("zxcvbnm,./", 18),
+    ("zxcvbnm,./", 26),
 ]
 
 key_buttons = {}
