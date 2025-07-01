@@ -150,4 +150,4 @@
              }' \
          http://your_middleman_server_ip:5000/platform/data_webhook
     ```
-    请将 `your_middleman_server_ip` 替换为中间者服务器的实际IP地址。示例值直接来源于您提供的文件。
+    请将 `YOUR_LIVE_ROOM_ID` 和 `YOUR_GAME_USER_ID` 替换为实际值，并将 `your_middleman_server_ip` 替换为中间者服务器的实际IP地址。示例值直接来源于您提供的文件。
